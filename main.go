@@ -3,13 +3,18 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
+
+// 全局对象
+var DB *gorm.DB
 
 // 链接数据库
 // 接受用户请求
 // 一个代办事项作为一个结构体，存放在数据库。
 //需要创建数据库，
-// 需要操作的对象
+// 需要操作的 model
 type Todo struct {
 	//ID int 'json:"id"'
 	//Title string 'json:"Titel"'
@@ -20,9 +25,29 @@ type Todo struct {
 	Status bool `json:"status"`
 
 }
+// 数据库只有链接成功了，才有后续的操作
+func initMySQL() (err error){
+	dsn := "root:123456@tcp(127.0.0.1:3306)/bubble?charset=utf8mb4&parseTime=True&loc=Local"
+	DB, err = gorm.Open("mysql", dsn) // 这里不需要:=
+	if err != nil{
+		return
+	}
+	return DB.DB().Ping() // 如果连接成功了，会返回nil
+}
+
+
 func main() {
 	// 链接数据库
 	//sql
+	err := initMySQL()
+	if err != nil {
+		panic(err) // 有问题，直接不后续操作了
+	}
+	defer DB.Close() // 完整的退出
+
+	// 模型绑定；将model 和 表 关联
+	DB.AutoMigrate(&Todo{})
+
 
 
 	// gin 框架 // 接受用户请求
